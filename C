@@ -1,12 +1,13 @@
--- Setup
+-- SERVICES & GUI SETUP
 local player = game:GetService("Players").LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local UIS = game:GetService("UserInputService")
 
 local screenGui = Instance.new("ScreenGui", playerGui)
 screenGui.Name = "ZombieHeadModifier"
 screenGui.ResetOnSpawn = false
 
--- Toggle Button
+-- TOGGLE BUTTON
 local toggleButton = Instance.new("TextButton", screenGui)
 toggleButton.Size = UDim2.new(0, 120, 0, 40)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
@@ -18,7 +19,7 @@ toggleButton.TextSize = 20
 toggleButton.Active = true
 toggleButton.Draggable = true
 
--- Settings Frame
+-- SETTINGS FRAME
 local settingsFrame = Instance.new("Frame", screenGui)
 settingsFrame.Size = UDim2.new(0, 320, 0, 230)
 settingsFrame.Position = UDim2.new(0, 140, 0, 10)
@@ -36,7 +37,7 @@ titleLabel.TextColor3 = Color3.new(1, 1, 1)
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 20
 
--- Toggle Feature Button
+-- TOGGLE FEATURE BUTTON
 local toggleFeature = Instance.new("TextButton", settingsFrame)
 toggleFeature.Position = UDim2.new(0, 10, 0, 40)
 toggleFeature.Size = UDim2.new(1, -20, 0, 30)
@@ -46,7 +47,7 @@ toggleFeature.TextColor3 = Color3.new(1, 1, 1)
 toggleFeature.Font = Enum.Font.SourceSans
 toggleFeature.TextSize = 18
 
--- Labels and sliders
+-- SLIDER CREATOR FUNCTION
 local function createSlider(yPos, labelText, maxValue, initialValue)
 	local label = Instance.new("TextLabel", settingsFrame)
 	label.Position = UDim2.new(0, 10, 0, yPos)
@@ -80,20 +81,22 @@ local function createSlider(yPos, labelText, maxValue, initialValue)
 	return slider, knob, inputBox
 end
 
--- Initial values
+-- INITIAL VALUES
 local sizeValue = 4
 local transValue = 0.5
 local maxSize = 5
+local defaultSize = Vector3.new(2, 1, 1)
+local defaultTransparency = 0
 
 local sizeSlider, sizeKnob, sizeInput = createSlider(80, "Head Size", maxSize, sizeValue)
 local transSlider, transKnob, transInput = createSlider(140, "Transparency", 1, transValue)
 
--- GUI Toggle
+-- TOGGLE GUI
 toggleButton.MouseButton1Click:Connect(function()
 	settingsFrame.Visible = not settingsFrame.Visible
 end)
 
--- Feature toggle
+-- TOGGLE FUNCTIONALITY
 local enabled = false
 toggleFeature.MouseButton1Click:Connect(function()
 	enabled = not enabled
@@ -101,9 +104,7 @@ toggleFeature.MouseButton1Click:Connect(function()
 	toggleFeature.BackgroundColor3 = enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(100, 0, 0)
 end)
 
--- Slider logic
-local UIS = game:GetService("UserInputService")
-
+-- SLIDER + INPUT SYNC LOGIC
 local function setupSlider(slider, knob, inputBox, max, getSetFunc)
 	slider.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -119,8 +120,8 @@ local function setupSlider(slider, knob, inputBox, max, getSetFunc)
 				end
 			end)
 			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					if moveConn then moveConn:Disconnect() end
+				if input.UserInputState == Enum.UserInputState.End and moveConn then
+					moveConn:Disconnect()
 				end
 			end)
 		end
@@ -140,7 +141,7 @@ local function setupSlider(slider, knob, inputBox, max, getSetFunc)
 end
 
 setupSlider(sizeSlider, sizeKnob, sizeInput, maxSize, function(v)
-	if v then sizeValue = math.max(1, math.floor(v)) end
+	if v then sizeValue = math.clamp(math.floor(v), 1, maxSize) end
 	return sizeValue
 end)
 
@@ -149,30 +150,43 @@ setupSlider(transSlider, transKnob, transInput, 1, function(v)
 	return transValue
 end)
 
--- Live updater loop
+-- HEAD MODIFIER FUNCTION
+local function applyToHead(model)
+	local head = model:FindFirstChild("Head")
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if head and head:IsA("BasePart") and humanoid then
+		head.Size = Vector3.new(sizeValue, sizeValue, sizeValue)
+		head.Transparency = transValue
+		head.CanCollide = false
+	end
+end
+
+local function resetHead(model)
+	local head = model:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		head.Size = defaultSize
+		head.Transparency = defaultTransparency
+		head.CanCollide = true
+	end
+end
+
+-- MONITOR ZOMBIES LIVE
 local zombiesFolder = workspace:WaitForChild("Zombies")
 
 task.spawn(function()
 	while true do
 		if enabled then
 			for _, model in ipairs(zombiesFolder:GetChildren()) do
-				if model:IsA("Model") and not model:GetAttribute("ModifiedByScript") then
+				if model:IsA("Model") then
 					local humanoid = model:FindFirstChildOfClass("Humanoid")
-					local head = model:FindFirstChild("Head")
-					if humanoid and head and head:IsA("BasePart") then
-						head.Size = Vector3.new(sizeValue, sizeValue, sizeValue)
-						head.Transparency = transValue
-						head.CanCollide = false
-						model:SetAttribute("ModifiedByScript", true)
-					end
-				elseif model:IsA("Model") then
-					local head = model:FindFirstChild("Head")
-					if head then
-						if head.Size.X ~= sizeValue or head.Transparency ~= transValue then
-							head.Size = Vector3.new(sizeValue, sizeValue, sizeValue)
-							head.Transparency = transValue
-							head.CanCollide = false
+					if humanoid then
+						if not model:GetAttribute("Connected") then
+							humanoid.Died:Connect(function()
+								resetHead(model)
+							end)
+							model:SetAttribute("Connected", true)
 						end
+						applyToHead(model)
 					end
 				end
 			end
