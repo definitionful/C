@@ -1,46 +1,31 @@
-local player = game.Players.LocalPlayer
-local mouse = player:GetMouse()
-local Aiming = false
+local zombiesFolder = workspace:WaitForChild("Zombies")
 
-function AimLock()
-	local target
-	local lastMagnitude = math.huge -- Start with a high value for comparison
+-- Function to check and modify a model
+local function modifyZombieModel(model)
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    local head = model:FindFirstChild("Head")
 
-	for _, v in pairs(game.Players:GetPlayers()) do
-		if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-			local charPos = v.Character.HumanoidRootPart.Position
-			local mousePos = mouse.Hit.p
-			local distance = (charPos - mousePos).Magnitude
-
-			if distance < lastMagnitude then
-				lastMagnitude = distance
-				target = v
-			end
-		end
-	end
-
-	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-		local charPos = target.Character.HumanoidRootPart.Position
-		local cam = workspace.CurrentCamera
-		local pos = cam.CFrame.Position
-
-		-- Set the camera CFrame to aim at the target
-		workspace.CurrentCamera.CFrame = CFrame.new(pos, charPos)
-	end
+    if humanoid and head and head:IsA("BasePart") then
+        head.Size = Vector3.new(5, 5, 5)
+        head.CanCollide = false -- optional: prevents weird collision issues
+        -- Update position if needed to compensate for size (optional)
+        print("Modified head size for:", model.Name)
+    end
 end
 
-local UserInputService = game:GetService("UserInputService")
+-- Modify existing zombie models at start
+for _, model in ipairs(zombiesFolder:GetChildren()) do
+    if model:IsA("Model") then
+        modifyZombieModel(model)
+    end
+end
 
--- Toggle aiming with "E"
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if not gameProcessed and input.KeyCode == Enum.KeyCode.E then
-		Aiming = not Aiming -- Toggle aiming state
-	end
-end)
-
--- Run AimLock while Aiming is true
-game:GetService("RunService").RenderStepped:Connect(function()
-	if Aiming then
-		AimLock()
-	end
+-- Listen for new models being added to the folder
+zombiesFolder.ChildAdded:Connect(function(child)
+    if child:IsA("Model") then
+        -- Wait briefly to ensure children are loaded
+        child.ChildAdded:Wait() -- ensure parts are loaded in newly spawned models
+        task.wait(0.1)
+        modifyZombieModel(child)
+    end
 end)
