@@ -1,7 +1,7 @@
+-- Setup
 local player = game:GetService("Players").LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Create GUI
 local screenGui = Instance.new("ScreenGui", playerGui)
 screenGui.Name = "ZombieHeadModifier"
 screenGui.ResetOnSpawn = false
@@ -12,7 +12,7 @@ toggleButton.Size = UDim2.new(0, 120, 0, 40)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
 toggleButton.Text = "Zombie GUI"
 toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
 toggleButton.Font = Enum.Font.SourceSansBold
 toggleButton.TextSize = 20
 toggleButton.Active = true
@@ -20,22 +20,19 @@ toggleButton.Draggable = true
 
 -- Settings Frame
 local settingsFrame = Instance.new("Frame", screenGui)
-settingsFrame.Size = UDim2.new(0, 300, 0, 200)
+settingsFrame.Size = UDim2.new(0, 320, 0, 230)
 settingsFrame.Position = UDim2.new(0, 140, 0, 10)
 settingsFrame.Visible = false
 settingsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-settingsFrame.BorderSizePixel = 0
 settingsFrame.Active = true
 settingsFrame.Draggable = true
-
-local uiCorner = Instance.new("UICorner", settingsFrame)
-uiCorner.CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", settingsFrame)
 
 local titleLabel = Instance.new("TextLabel", settingsFrame)
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.Text = "Zombie Head Editor"
 titleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-titleLabel.TextColor3 = Color3.new(1,1,1)
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 20
 
@@ -45,134 +42,141 @@ toggleFeature.Position = UDim2.new(0, 10, 0, 40)
 toggleFeature.Size = UDim2.new(1, -20, 0, 30)
 toggleFeature.Text = "Feature: OFF"
 toggleFeature.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-toggleFeature.TextColor3 = Color3.new(1,1,1)
+toggleFeature.TextColor3 = Color3.new(1, 1, 1)
 toggleFeature.Font = Enum.Font.SourceSans
 toggleFeature.TextSize = 18
 
--- Size Slider
-local sizeLabel = Instance.new("TextLabel", settingsFrame)
-sizeLabel.Position = UDim2.new(0, 10, 0, 80)
-sizeLabel.Size = UDim2.new(1, -20, 0, 20)
-sizeLabel.Text = "Head Size"
-sizeLabel.TextColor3 = Color3.new(1,1,1)
-sizeLabel.BackgroundTransparency = 1
-sizeLabel.Font = Enum.Font.SourceSans
-sizeLabel.TextSize = 16
+-- Labels and sliders
+local function createSlider(yPos, labelText, maxValue, initialValue)
+	local label = Instance.new("TextLabel", settingsFrame)
+	label.Position = UDim2.new(0, 10, 0, yPos)
+	label.Size = UDim2.new(0, 100, 0, 20)
+	label.Text = labelText
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.SourceSans
+	label.TextSize = 16
 
-local sizeSlider = Instance.new("TextButton", settingsFrame)
-sizeSlider.Position = UDim2.new(0, 10, 0, 105)
-sizeSlider.Size = UDim2.new(1, -20, 0, 20)
-sizeSlider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-sizeSlider.Text = ""
+	local slider = Instance.new("Frame", settingsFrame)
+	slider.Position = UDim2.new(0, 10, 0, yPos + 25)
+	slider.Size = UDim2.new(0, 200, 0, 20)
+	slider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 
-local sizeValue = 5 -- default
-local maxSize = 50
+	local knob = Instance.new("Frame", slider)
+	knob.Size = UDim2.new(0, 10, 1, 0)
+	knob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+	Instance.new("UICorner", knob)
 
-local sizeKnob = Instance.new("Frame", sizeSlider)
-sizeKnob.Size = UDim2.new(0, 10, 1, 0)
-sizeKnob.Position = UDim2.new(sizeValue / maxSize, -5, 0, 0)
-sizeKnob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-Instance.new("UICorner", sizeKnob)
+	local inputBox = Instance.new("TextBox", settingsFrame)
+	inputBox.Position = UDim2.new(0, 220, 0, yPos + 25)
+	inputBox.Size = UDim2.new(0, 80, 0, 20)
+	inputBox.Text = tostring(initialValue)
+	inputBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	inputBox.TextColor3 = Color3.new(1, 1, 1)
+	inputBox.Font = Enum.Font.SourceSans
+	inputBox.TextSize = 16
+	inputBox.ClearTextOnFocus = false
 
--- Transparency Slider
-local transLabel = Instance.new("TextLabel", settingsFrame)
-transLabel.Position = UDim2.new(0, 10, 0, 135)
-transLabel.Size = UDim2.new(1, -20, 0, 20)
-transLabel.Text = "Transparency"
-transLabel.TextColor3 = Color3.new(1,1,1)
-transLabel.BackgroundTransparency = 1
-transLabel.Font = Enum.Font.SourceSans
-transLabel.TextSize = 16
-
-local transSlider = Instance.new("TextButton", settingsFrame)
-transSlider.Position = UDim2.new(0, 10, 0, 160)
-transSlider.Size = UDim2.new(1, -20, 0, 20)
-transSlider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-transSlider.Text = ""
-
-local transValue = 0.5
-
-local transKnob = Instance.new("Frame", transSlider)
-transKnob.Size = UDim2.new(0, 10, 1, 0)
-transKnob.Position = UDim2.new(transValue, -5, 0, 0)
-transKnob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-Instance.new("UICorner", transKnob)
-
--- Slider behavior
-local UIS = game:GetService("UserInputService")
-
-local function setupSlider(slider, knob, maxVal, setCallback)
-	slider.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			local moveConn, upConn
-
-			moveConn = UIS.InputChanged:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseMovement then
-					local relX = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-					knob.Position = UDim2.new(relX, -5, 0, 0)
-					setCallback(relX * maxVal)
-				end
-			end)
-
-			upConn = input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					moveConn:Disconnect()
-					upConn:Disconnect()
-				end
-			end)
-		end
-	end)
+	return slider, knob, inputBox
 end
 
-setupSlider(sizeSlider, sizeKnob, maxSize, function(val)
-	sizeValue = math.max(1, math.floor(val + 0.5))
-end)
+-- Initial values
+local sizeValue = 4
+local transValue = 0.5
+local maxSize = 5
 
-setupSlider(transSlider, transKnob, 1, function(val)
-	transValue = math.clamp(val, 0, 1)
-end)
+local sizeSlider, sizeKnob, sizeInput = createSlider(80, "Head Size", maxSize, sizeValue)
+local transSlider, transKnob, transInput = createSlider(140, "Transparency", 1, transValue)
 
--- Toggle GUI visibility
+-- GUI Toggle
 toggleButton.MouseButton1Click:Connect(function()
 	settingsFrame.Visible = not settingsFrame.Visible
 end)
 
--- Toggle head modification
+-- Feature toggle
 local enabled = false
-
 toggleFeature.MouseButton1Click:Connect(function()
 	enabled = not enabled
 	toggleFeature.Text = "Feature: " .. (enabled and "ON" or "OFF")
 	toggleFeature.BackgroundColor3 = enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(100, 0, 0)
 end)
 
--- Main Logic
+-- Slider logic
+local UIS = game:GetService("UserInputService")
+
+local function setupSlider(slider, knob, inputBox, max, getSetFunc)
+	slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			local moveConn
+			moveConn = UIS.InputChanged:Connect(function(moveInput)
+				if moveInput.UserInputType == Enum.UserInputType.MouseMovement then
+					local relX = (moveInput.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
+					local clamped = math.clamp(relX, 0, 1)
+					local val = math.floor(clamped * max * 100 + 0.5) / 100
+					knob.Position = UDim2.new(clamped, -5, 0, 0)
+					getSetFunc(val)
+					inputBox.Text = tostring(val)
+				end
+			end)
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					if moveConn then moveConn:Disconnect() end
+				end
+			end)
+		end
+	end)
+
+	inputBox.FocusLost:Connect(function()
+		local val = tonumber(inputBox.Text)
+		if val then
+			val = math.clamp(val, 0, max)
+			getSetFunc(val)
+			knob.Position = UDim2.new(val / max, -5, 0, 0)
+			inputBox.Text = tostring(val)
+		else
+			inputBox.Text = tostring(getSetFunc())
+		end
+	end)
+end
+
+setupSlider(sizeSlider, sizeKnob, sizeInput, maxSize, function(v)
+	if v then sizeValue = math.max(1, math.floor(v)) end
+	return sizeValue
+end)
+
+setupSlider(transSlider, transKnob, transInput, 1, function(v)
+	if v then transValue = math.clamp(v, 0, 1) end
+	return transValue
+end)
+
+-- Live updater loop
 local zombiesFolder = workspace:WaitForChild("Zombies")
 
-local function modifyHead(model)
-	if not enabled then return end
-
-	local humanoid = model:FindFirstChildOfClass("Humanoid")
-	local head = model:FindFirstChild("Head")
-
-	if humanoid and head and head:IsA("BasePart") then
-		head.Size = Vector3.new(sizeValue, sizeValue, sizeValue)
-		head.Transparency = transValue
-		head.CanCollide = false
-	end
-end
-
--- Modify current
-for _, model in ipairs(zombiesFolder:GetChildren()) do
-	if model:IsA("Model") then
-		modifyHead(model)
-	end
-end
-
--- Listen for new zombies
-zombiesFolder.ChildAdded:Connect(function(child)
-	if child:IsA("Model") then
-		task.wait(0.1)
-		modifyHead(child)
+task.spawn(function()
+	while true do
+		if enabled then
+			for _, model in ipairs(zombiesFolder:GetChildren()) do
+				if model:IsA("Model") and not model:GetAttribute("ModifiedByScript") then
+					local humanoid = model:FindFirstChildOfClass("Humanoid")
+					local head = model:FindFirstChild("Head")
+					if humanoid and head and head:IsA("BasePart") then
+						head.Size = Vector3.new(sizeValue, sizeValue, sizeValue)
+						head.Transparency = transValue
+						head.CanCollide = false
+						model:SetAttribute("ModifiedByScript", true)
+					end
+				elseif model:IsA("Model") then
+					local head = model:FindFirstChild("Head")
+					if head then
+						if head.Size.X ~= sizeValue or head.Transparency ~= transValue then
+							head.Size = Vector3.new(sizeValue, sizeValue, sizeValue)
+							head.Transparency = transValue
+							head.CanCollide = false
+						end
+					end
+				end
+			end
+		end
+		task.wait(0.5)
 	end
 end)
