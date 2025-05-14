@@ -47,6 +47,36 @@ toggleFeature.TextColor3 = Color3.new(1, 1, 1)
 toggleFeature.Font = Enum.Font.SourceSans
 toggleFeature.TextSize = 18
 
+local Lighting = game:GetService("Lighting")
+local defaultFogStart = Lighting.FogStart
+local defaultFogEnd = Lighting.FogEnd
+
+local fogToggle = Instance.new("TextButton", settingsFrame)
+fogToggle.Position = UDim2.new(0, 10, 0, 190)
+fogToggle.Size = UDim2.new(1, -20, 0, 30)
+fogToggle.Text = "Fog: OFF"
+fogToggle.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+fogToggle.TextColor3 = Color3.new(1, 1, 1)
+fogToggle.Font = Enum.Font.SourceSans
+fogToggle.TextSize = 18
+
+local fogEnabled = false
+
+fogToggle.MouseButton1Click:Connect(function()
+	fogEnabled = not fogEnabled
+	if fogEnabled then
+		Lighting.FogStart = 0
+		Lighting.FogEnd = 1000000
+		fogToggle.Text = "Fog: REMOVED"
+		fogToggle.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+	else
+		Lighting.FogStart = defaultFogStart
+		Lighting.FogEnd = defaultFogEnd
+		fogToggle.Text = "Fog: OFF"
+		fogToggle.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+	end
+end)
+
 -- SLIDER CREATOR FUNCTION
 local function createSlider(yPos, labelText, maxValue, initialValue)
 	local label = Instance.new("TextLabel", settingsFrame)
