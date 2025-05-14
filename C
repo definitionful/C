@@ -1,31 +1,178 @@
+local player = game:GetService("Players").LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Create GUI
+local screenGui = Instance.new("ScreenGui", playerGui)
+screenGui.Name = "ZombieHeadModifier"
+screenGui.ResetOnSpawn = false
+
+-- Toggle Button
+local toggleButton = Instance.new("TextButton", screenGui)
+toggleButton.Size = UDim2.new(0, 120, 0, 40)
+toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.Text = "Zombie GUI"
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 20
+toggleButton.Active = true
+toggleButton.Draggable = true
+
+-- Settings Frame
+local settingsFrame = Instance.new("Frame", screenGui)
+settingsFrame.Size = UDim2.new(0, 300, 0, 200)
+settingsFrame.Position = UDim2.new(0, 140, 0, 10)
+settingsFrame.Visible = false
+settingsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+settingsFrame.BorderSizePixel = 0
+settingsFrame.Active = true
+settingsFrame.Draggable = true
+
+local uiCorner = Instance.new("UICorner", settingsFrame)
+uiCorner.CornerRadius = UDim.new(0, 8)
+
+local titleLabel = Instance.new("TextLabel", settingsFrame)
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Text = "Zombie Head Editor"
+titleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleLabel.TextColor3 = Color3.new(1,1,1)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 20
+
+-- Toggle Feature Button
+local toggleFeature = Instance.new("TextButton", settingsFrame)
+toggleFeature.Position = UDim2.new(0, 10, 0, 40)
+toggleFeature.Size = UDim2.new(1, -20, 0, 30)
+toggleFeature.Text = "Feature: OFF"
+toggleFeature.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+toggleFeature.TextColor3 = Color3.new(1,1,1)
+toggleFeature.Font = Enum.Font.SourceSans
+toggleFeature.TextSize = 18
+
+-- Size Slider
+local sizeLabel = Instance.new("TextLabel", settingsFrame)
+sizeLabel.Position = UDim2.new(0, 10, 0, 80)
+sizeLabel.Size = UDim2.new(1, -20, 0, 20)
+sizeLabel.Text = "Head Size"
+sizeLabel.TextColor3 = Color3.new(1,1,1)
+sizeLabel.BackgroundTransparency = 1
+sizeLabel.Font = Enum.Font.SourceSans
+sizeLabel.TextSize = 16
+
+local sizeSlider = Instance.new("TextButton", settingsFrame)
+sizeSlider.Position = UDim2.new(0, 10, 0, 105)
+sizeSlider.Size = UDim2.new(1, -20, 0, 20)
+sizeSlider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+sizeSlider.Text = ""
+
+local sizeValue = 5 -- default
+local maxSize = 50
+
+local sizeKnob = Instance.new("Frame", sizeSlider)
+sizeKnob.Size = UDim2.new(0, 10, 1, 0)
+sizeKnob.Position = UDim2.new(sizeValue / maxSize, -5, 0, 0)
+sizeKnob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+Instance.new("UICorner", sizeKnob)
+
+-- Transparency Slider
+local transLabel = Instance.new("TextLabel", settingsFrame)
+transLabel.Position = UDim2.new(0, 10, 0, 135)
+transLabel.Size = UDim2.new(1, -20, 0, 20)
+transLabel.Text = "Transparency"
+transLabel.TextColor3 = Color3.new(1,1,1)
+transLabel.BackgroundTransparency = 1
+transLabel.Font = Enum.Font.SourceSans
+transLabel.TextSize = 16
+
+local transSlider = Instance.new("TextButton", settingsFrame)
+transSlider.Position = UDim2.new(0, 10, 0, 160)
+transSlider.Size = UDim2.new(1, -20, 0, 20)
+transSlider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+transSlider.Text = ""
+
+local transValue = 0.5
+
+local transKnob = Instance.new("Frame", transSlider)
+transKnob.Size = UDim2.new(0, 10, 1, 0)
+transKnob.Position = UDim2.new(transValue, -5, 0, 0)
+transKnob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+Instance.new("UICorner", transKnob)
+
+-- Slider behavior
+local UIS = game:GetService("UserInputService")
+
+local function setupSlider(slider, knob, maxVal, setCallback)
+	slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			local moveConn, upConn
+
+			moveConn = UIS.InputChanged:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseMovement then
+					local relX = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+					knob.Position = UDim2.new(relX, -5, 0, 0)
+					setCallback(relX * maxVal)
+				end
+			end)
+
+			upConn = input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					moveConn:Disconnect()
+					upConn:Disconnect()
+				end
+			end)
+		end
+	end)
+end
+
+setupSlider(sizeSlider, sizeKnob, maxSize, function(val)
+	sizeValue = math.max(1, math.floor(val + 0.5))
+end)
+
+setupSlider(transSlider, transKnob, 1, function(val)
+	transValue = math.clamp(val, 0, 1)
+end)
+
+-- Toggle GUI visibility
+toggleButton.MouseButton1Click:Connect(function()
+	settingsFrame.Visible = not settingsFrame.Visible
+end)
+
+-- Toggle head modification
+local enabled = false
+
+toggleFeature.MouseButton1Click:Connect(function()
+	enabled = not enabled
+	toggleFeature.Text = "Feature: " .. (enabled and "ON" or "OFF")
+	toggleFeature.BackgroundColor3 = enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(100, 0, 0)
+end)
+
+-- Main Logic
 local zombiesFolder = workspace:WaitForChild("Zombies")
 
--- Function to check and modify a model
-local function modifyZombieModel(model)
-    local humanoid = model:FindFirstChildOfClass("Humanoid")
-    local head = model:FindFirstChild("Head")
+local function modifyHead(model)
+	if not enabled then return end
 
-    if humanoid and head and head:IsA("BasePart") then
-        head.Size = Vector3.new(5, 5, 5)
-        head.CanCollide = false -- optional: prevents weird collision issues
-        -- Update position if needed to compensate for size (optional)
-        print("Modified head size for:", model.Name)
-    end
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	local head = model:FindFirstChild("Head")
+
+	if humanoid and head and head:IsA("BasePart") then
+		head.Size = Vector3.new(sizeValue, sizeValue, sizeValue)
+		head.Transparency = transValue
+		head.CanCollide = false
+	end
 end
 
--- Modify existing zombie models at start
+-- Modify current
 for _, model in ipairs(zombiesFolder:GetChildren()) do
-    if model:IsA("Model") then
-        modifyZombieModel(model)
-    end
+	if model:IsA("Model") then
+		modifyHead(model)
+	end
 end
 
--- Listen for new models being added to the folder
+-- Listen for new zombies
 zombiesFolder.ChildAdded:Connect(function(child)
-    if child:IsA("Model") then
-        -- Wait briefly to ensure children are loaded
-        child.ChildAdded:Wait() -- ensure parts are loaded in newly spawned models
-        task.wait(0.1)
-        modifyZombieModel(child)
-    end
+	if child:IsA("Model") then
+		task.wait(0.1)
+		modifyHead(child)
+	end
 end)
