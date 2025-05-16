@@ -1,0 +1,49 @@
+local camera = workspace:WaitForChild("Camera")
+local screenGui = script.Parent
+
+local toggleButton = screenGui:WaitForChild("ToggleButton")
+local sizeSlider = screenGui:WaitForChild("SizeSlider")
+local transparencySlider = screenGui:WaitForChild("TransparencySlider")
+
+local enabled = false
+local currentSize = 5
+local currentTransparency = 0
+
+-- Apply changes to all m_Zombie heads in Camera
+local function applyChanges()
+	if not enabled then return end
+
+	for _, zombie in pairs(camera:GetChildren()) do
+		if zombie.Name == "m_Zombie" then
+			local head = zombie:FindFirstChild("Head")
+			if head and head:IsA("MeshPart") then
+				head.Size = Vector3.new(currentSize, currentSize, currentSize)
+				head.Transparency = currentTransparency
+			end
+		end
+	end
+end
+
+-- Toggle GUI
+toggleButton.MouseButton1Click:Connect(function()
+	enabled = not enabled
+	toggleButton.Text = enabled and "ON" or "OFF"
+	applyChanges()
+end)
+
+-- Listen for slider changes
+sizeSlider:GetPropertyChangedSignal("Text"):Connect(function()
+	local val = tonumber(sizeSlider.Text)
+	if val and val >= 1 and val <= 5 then
+		currentSize = val
+		applyChanges()
+	end
+end)
+
+transparencySlider:GetPropertyChangedSignal("Text"):Connect(function()
+	local val = tonumber(transparencySlider.Text)
+	if val and val >= 0 and val <= 1 then
+		currentTransparency = val
+		applyChanges()
+	end
+end)
