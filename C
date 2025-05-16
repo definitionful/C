@@ -1,27 +1,17 @@
--- ROBLOX LOCAL SCRIPT - Full Zombie GUI with Head Modifier + Full Bright
--- Place this in StarterPlayerScripts
-
-local player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local UIS = game:GetService("UserInputService")
-local Lighting = game:GetService("Lighting")
-local zombiesFolder = workspace:WaitForChild("Zombies")
+local camera = workspace:WaitForChild("Camera")
 
--- Save original lighting settings
-local originalSettings = {
-	Brightness = Lighting.Brightness,
-	ClockTime = Lighting.ClockTime,
-	Ambient = Lighting.Ambient,
-	OutdoorAmbient = Lighting.OutdoorAmbient,
-	EnvironmentDiffuseScale = Lighting:FindFirstChild("EnvironmentDiffuseScale") and Lighting.EnvironmentDiffuseScale or 1,
-}
-
--- GUI Setup
+local placeId = game.PlaceId
 local screenGui = Instance.new("ScreenGui", playerGui)
 screenGui.Name = "ZombieHeadModifier"
 screenGui.ResetOnSpawn = false
 
--- Toggle Main Menu Button
+-- GUI Elements
 local toggleButton = Instance.new("TextButton", screenGui)
 toggleButton.Size = UDim2.new(0, 120, 0, 40)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
@@ -33,9 +23,8 @@ toggleButton.TextSize = 20
 toggleButton.Active = true
 toggleButton.Draggable = true
 
--- Settings Frame
 local settingsFrame = Instance.new("Frame", screenGui)
-settingsFrame.Size = UDim2.new(0, 320, 0, 270)
+settingsFrame.Size = UDim2.new(0, 320, 0, 230)
 settingsFrame.Position = UDim2.new(0, 140, 0, 10)
 settingsFrame.Visible = false
 settingsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -51,7 +40,7 @@ titleLabel.TextColor3 = Color3.new(1, 1, 1)
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 20
 
--- Toggle feature button
+-- Toggle Feature
 local toggleFeature = Instance.new("TextButton", settingsFrame)
 toggleFeature.Position = UDim2.new(0, 10, 0, 40)
 toggleFeature.Size = UDim2.new(1, -20, 0, 30)
@@ -61,43 +50,7 @@ toggleFeature.TextColor3 = Color3.new(1, 1, 1)
 toggleFeature.Font = Enum.Font.SourceSans
 toggleFeature.TextSize = 18
 
--- Full Bright Toggle
-local fullBrightButton = Instance.new("TextButton", settingsFrame)
-fullBrightButton.Position = UDim2.new(0, 10, 0, 80)
-fullBrightButton.Size = UDim2.new(1, -20, 0, 30)
-fullBrightButton.Text = "Full Bright: OFF"
-fullBrightButton.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-fullBrightButton.TextColor3 = Color3.new(1, 1, 1)
-fullBrightButton.Font = Enum.Font.SourceSans
-fullBrightButton.TextSize = 18
-
-local fullBrightOn = false
-fullBrightButton.MouseButton1Click:Connect(function()
-	fullBrightOn = not fullBrightOn
-	if fullBrightOn then
-		Lighting.Brightness = 5
-		Lighting.ClockTime = 12
-		Lighting.Ambient = Color3.new(1, 1, 1)
-		Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
-		if Lighting:FindFirstChild("EnvironmentDiffuseScale") then
-			Lighting.EnvironmentDiffuseScale = 1
-		end
-		fullBrightButton.Text = "Full Bright: ON"
-		fullBrightButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-	else
-		Lighting.Brightness = originalSettings.Brightness
-		Lighting.ClockTime = originalSettings.ClockTime
-		Lighting.Ambient = originalSettings.Ambient
-		Lighting.OutdoorAmbient = originalSettings.OutdoorAmbient
-		if Lighting:FindFirstChild("EnvironmentDiffuseScale") then
-			Lighting.EnvironmentDiffuseScale = originalSettings.EnvironmentDiffuseScale
-		end
-		fullBrightButton.Text = "Full Bright: OFF"
-		fullBrightButton.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-	end
-end)
-
--- Slider creator
+-- Slider creation
 local function createSlider(yPos, labelText, maxValue, initialValue)
 	local label = Instance.new("TextLabel", settingsFrame)
 	label.Position = UDim2.new(0, 10, 0, yPos)
@@ -131,20 +84,22 @@ local function createSlider(yPos, labelText, maxValue, initialValue)
 	return slider, knob, inputBox
 end
 
+-- Initial values
 local sizeValue = 4
 local transValue = 0.5
 local maxSize = 5
 local defaultSize = Vector3.new(2, 1, 1)
 local defaultTransparency = 0
 
-local sizeSlider, sizeKnob, sizeInput = createSlider(120, "Head Size", maxSize, sizeValue)
-local transSlider, transKnob, transInput = createSlider(180, "Transparency", 1, transValue)
+local sizeSlider, sizeKnob, sizeInput = createSlider(80, "Head Size", maxSize, sizeValue)
+local transSlider, transKnob, transInput = createSlider(140, "Transparency", 1, transValue)
 
--- Toggle menu button
+-- Toggle GUI
 toggleButton.MouseButton1Click:Connect(function()
 	settingsFrame.Visible = not settingsFrame.Visible
 end)
 
+-- Feature enable/disable
 local enabled = false
 toggleFeature.MouseButton1Click:Connect(function()
 	enabled = not enabled
@@ -152,7 +107,7 @@ toggleFeature.MouseButton1Click:Connect(function()
 	toggleFeature.BackgroundColor3 = enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(100, 0, 0)
 end)
 
--- Slider setup
+-- Slider + input sync
 local function setupSlider(slider, knob, inputBox, max, getSetFunc)
 	slider.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -198,7 +153,51 @@ setupSlider(transSlider, transKnob, transInput, 1, function(v)
 	return transValue
 end)
 
--- Head modifier
+-- Full Bright Toggle
+local originalSettings = {
+	Brightness = Lighting.Brightness,
+	ClockTime = Lighting.ClockTime,
+	Ambient = Lighting.Ambient,
+	OutdoorAmbient = Lighting.OutdoorAmbient,
+	EnvironmentDiffuseScale = Lighting:FindFirstChild("EnvironmentDiffuseScale") and Lighting.EnvironmentDiffuseScale or 1,
+}
+
+local fullBrightButton = Instance.new("TextButton", settingsFrame)
+fullBrightButton.Position = UDim2.new(0, 10, 0, 190)
+fullBrightButton.Size = UDim2.new(1, -20, 0, 30)
+fullBrightButton.Text = "Full Bright: OFF"
+fullBrightButton.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+fullBrightButton.TextColor3 = Color3.new(1, 1, 1)
+fullBrightButton.Font = Enum.Font.SourceSans
+fullBrightButton.TextSize = 18
+
+local fullBrightOn = false
+fullBrightButton.MouseButton1Click:Connect(function()
+	fullBrightOn = not fullBrightOn
+	if fullBrightOn then
+		Lighting.Brightness = 5
+		Lighting.ClockTime = 12
+		Lighting.Ambient = Color3.new(1, 1, 1)
+		Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+		if Lighting:FindFirstChild("EnvironmentDiffuseScale") then
+			Lighting.EnvironmentDiffuseScale = 1
+		end
+		fullBrightButton.Text = "Full Bright: ON"
+		fullBrightButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+	else
+		Lighting.Brightness = originalSettings.Brightness
+		Lighting.ClockTime = originalSettings.ClockTime
+		Lighting.Ambient = originalSettings.Ambient
+		Lighting.OutdoorAmbient = originalSettings.OutdoorAmbient
+		if Lighting:FindFirstChild("EnvironmentDiffuseScale") then
+			Lighting.EnvironmentDiffuseScale = originalSettings.EnvironmentDiffuseScale
+		end
+		fullBrightButton.Text = "Full Bright: OFF"
+		fullBrightButton.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+	end
+end)
+
+-- Standard Head Logic
 local function applyToHead(model)
 	local head = model:FindFirstChild("Head")
 	local humanoid = model:FindFirstChildOfClass("Humanoid")
@@ -218,25 +217,59 @@ local function resetHead(model)
 	end
 end
 
--- Live monitor loop
-task.spawn(function()
-	while true do
-		if enabled then
-			for _, model in ipairs(zombiesFolder:GetChildren()) do
-				if model:IsA("Model") then
-					local humanoid = model:FindFirstChildOfClass("Humanoid")
-					if humanoid then
-						if not model:GetAttribute("Connected") then
-							humanoid.Died:Connect(function()
-								resetHead(model)
-							end)
-							model:SetAttribute("Connected", true)
+-- Game check: switch logic based on placeId
+if placeId == 12334109280 then
+	-- ALTERNATE HEAD SIZE ENFORCER
+	local targetSize = Vector3.new(5, 5, 5)
+	local trackedZombies = {}
+
+	local function enforceHeadSize(zombie)
+		local head = zombie:FindFirstChild("Head")
+		if head and head:IsA("MeshPart") then
+			RunService.Heartbeat:Connect(function()
+				if head and head.Parent == zombie and head.Size ~= targetSize then
+					head.Size = targetSize
+				end
+			end)
+		end
+	end
+
+	for _, obj in pairs(camera:GetChildren()) do
+		if obj.Name == "m_Zombie" and not trackedZombies[obj] then
+			trackedZombies[obj] = true
+			enforceHeadSize(obj)
+		end
+	end
+
+	camera.ChildAdded:Connect(function(child)
+		if child.Name == "m_Zombie" and not trackedZombies[child] then
+			trackedZombies[child] = true
+			enforceHeadSize(child)
+		end
+	end)
+else
+	-- STANDARD ZOMBIE CHECKER
+	local zombiesFolder = workspace:WaitForChild("Zombies")
+
+	task.spawn(function()
+		while true do
+			if enabled then
+				for _, model in ipairs(zombiesFolder:GetChildren()) do
+					if model:IsA("Model") then
+						local humanoid = model:FindFirstChildOfClass("Humanoid")
+						if humanoid then
+							if not model:GetAttribute("Connected") then
+								humanoid.Died:Connect(function()
+									resetHead(model)
+								end)
+								model:SetAttribute("Connected", true)
+							end
+							applyToHead(model)
 						end
-						applyToHead(model)
 					end
 				end
 			end
+			task.wait(0.5)
 		end
-		task.wait(0.5)
-	end
-end)
+	end)
+end
