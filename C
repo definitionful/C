@@ -87,7 +87,7 @@ end
 -- Initial values
 local sizeValue = 4
 local transValue = 0.5
-local maxSize = 5
+local maxSize = 15
 local defaultSize = Vector3.new(2, 1, 1)
 local defaultTransparency = 0
 
