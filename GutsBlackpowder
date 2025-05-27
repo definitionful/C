@@ -1,0 +1,226 @@
+-- AlternateHeadEditor.lua
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local camera = workspace:WaitForChild("Camera")
+
+-- Only run if in specific game
+if game.PlaceId ~= 12334109280 then return end
+
+local screenGui = Instance.new("ScreenGui", playerGui)
+screenGui.Name = "AlternateHeadModifier"
+screenGui.ResetOnSpawn = false
+
+-- UI Elements
+local toggleButton = Instance.new("TextButton", screenGui)
+toggleButton.Size = UDim2.new(0, 120, 0, 40)
+toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.Text = "Zombie GUI"
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 20
+toggleButton.Active = true
+toggleButton.Draggable = true
+
+local settingsFrame = Instance.new("Frame", screenGui)
+settingsFrame.Size = UDim2.new(0, 320, 0, 230)
+settingsFrame.Position = UDim2.new(0, 140, 0, 10)
+settingsFrame.Visible = false
+settingsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+settingsFrame.Active = true
+settingsFrame.Draggable = true
+Instance.new("UICorner", settingsFrame)
+
+local titleLabel = Instance.new("TextLabel", settingsFrame)
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Text = "Zombie Head Editor"
+titleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 20
+
+local toggleFeature = Instance.new("TextButton", settingsFrame)
+toggleFeature.Position = UDim2.new(0, 10, 0, 40)
+toggleFeature.Size = UDim2.new(1, -20, 0, 30)
+toggleFeature.Text = "Feature: OFF"
+toggleFeature.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+toggleFeature.TextColor3 = Color3.new(1, 1, 1)
+toggleFeature.Font = Enum.Font.SourceSans
+toggleFeature.TextSize = 18
+
+local function createSlider(yPos, labelText, maxValue, initialValue)
+	local label = Instance.new("TextLabel", settingsFrame)
+	label.Position = UDim2.new(0, 10, 0, yPos)
+	label.Size = UDim2.new(0, 100, 0, 20)
+	label.Text = labelText
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.SourceSans
+	label.TextSize = 16
+
+	local slider = Instance.new("Frame", settingsFrame)
+	slider.Position = UDim2.new(0, 10, 0, yPos + 25)
+	slider.Size = UDim2.new(0, 200, 0, 20)
+	slider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+
+	local knob = Instance.new("Frame", slider)
+	knob.Size = UDim2.new(0, 10, 1, 0)
+	knob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+	Instance.new("UICorner", knob)
+
+	local inputBox = Instance.new("TextBox", settingsFrame)
+	inputBox.Position = UDim2.new(0, 220, 0, yPos + 25)
+	inputBox.Size = UDim2.new(0, 80, 0, 20)
+	inputBox.Text = tostring(initialValue)
+	inputBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	inputBox.TextColor3 = Color3.new(1, 1, 1)
+	inputBox.Font = Enum.Font.SourceSans
+	inputBox.TextSize = 16
+	inputBox.ClearTextOnFocus = false
+
+	return slider, knob, inputBox
+end
+
+-- Default values
+local sizeValue = 5
+local transValue = 0.5
+local maxSize = 5
+local targetSizeVec = Vector3.new(sizeValue, sizeValue, sizeValue)
+
+local sizeSlider, sizeKnob, sizeInput = createSlider(80, "Head Size", maxSize, sizeValue)
+local transSlider, transKnob, transInput = createSlider(140, "Transparency", 1, transValue)
+
+toggleButton.MouseButton1Click:Connect(function()
+	settingsFrame.Visible = not settingsFrame.Visible
+end)
+
+local enabled = false
+toggleFeature.MouseButton1Click:Connect(function()
+	enabled = not enabled
+	toggleFeature.Text = "Feature: " .. (enabled and "ON" or "OFF")
+	toggleFeature.BackgroundColor3 = enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(100, 0, 0)
+end)
+
+-- Slider syncing
+local function setupSlider(slider, knob, inputBox, max, getSetFunc)
+	slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			local moveConn
+			moveConn = UIS.InputChanged:Connect(function(moveInput)
+				if moveInput.UserInputType == Enum.UserInputType.MouseMovement then
+					local relX = (moveInput.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
+					local clamped = math.clamp(relX, 0, 1)
+					local val = math.floor(clamped * max * 100 + 0.5) / 100
+					knob.Position = UDim2.new(clamped, -5, 0, 0)
+					getSetFunc(val)
+					inputBox.Text = tostring(val)
+				end
+			end)
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End and moveConn then
+					moveConn:Disconnect()
+				end
+			end)
+		end
+	end)
+
+	inputBox.FocusLost:Connect(function()
+		local val = tonumber(inputBox.Text)
+		if val then
+			val = math.clamp(val, 0, max)
+			getSetFunc(val)
+			knob.Position = UDim2.new(val / max, -5, 0, 0)
+			inputBox.Text = tostring(val)
+		else
+			inputBox.Text = tostring(getSetFunc())
+		end
+	end)
+end
+
+setupSlider(sizeSlider, sizeKnob, sizeInput, maxSize, function(v)
+	if v then
+		sizeValue = math.floor(v)
+		targetSizeVec = Vector3.new(sizeValue, sizeValue, sizeValue)
+	end
+	return sizeValue
+end)
+
+setupSlider(transSlider, transKnob, transInput, 1, function(v)
+	if v then
+		transValue = v
+	end
+	return transValue
+end)
+
+-- Full Bright
+local originalSettings = {
+	Brightness = Lighting.Brightness,
+	ClockTime = Lighting.ClockTime,
+	Ambient = Lighting.Ambient,
+	OutdoorAmbient = Lighting.OutdoorAmbient,
+}
+
+local fullBrightButton = Instance.new("TextButton", settingsFrame)
+fullBrightButton.Position = UDim2.new(0, 10, 0, 190)
+fullBrightButton.Size = UDim2.new(1, -20, 0, 30)
+fullBrightButton.Text = "Full Bright: OFF"
+fullBrightButton.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+fullBrightButton.TextColor3 = Color3.new(1, 1, 1)
+fullBrightButton.Font = Enum.Font.SourceSans
+fullBrightButton.TextSize = 18
+
+local fullBrightOn = false
+fullBrightButton.MouseButton1Click:Connect(function()
+	fullBrightOn = not fullBrightOn
+	if fullBrightOn then
+		Lighting.Brightness = 5
+		Lighting.ClockTime = 12
+		Lighting.Ambient = Color3.new(1, 1, 1)
+		Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+		fullBrightButton.Text = "Full Bright: ON"
+		fullBrightButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+	else
+		for prop, val in pairs(originalSettings) do
+			Lighting[prop] = val
+		end
+		fullBrightButton.Text = "Full Bright: OFF"
+		fullBrightButton.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+	end
+end)
+
+-- Alternate Zombie Tracker (Camera)
+local trackedZombies = {}
+
+local function enforceHeadSize(zombie)
+	local head = zombie:FindFirstChild("Head")
+	if head and head:IsA("MeshPart") then
+		RunService.Heartbeat:Connect(function()
+			if enabled and head and head.Parent == zombie then
+				if head.Size ~= targetSizeVec then
+					head.Size = targetSizeVec
+				end
+				head.Transparency = transValue
+			end
+		end)
+	end
+end
+
+-- Initial check
+for _, obj in pairs(camera:GetChildren()) do
+	if obj.Name == "m_Zombie" and not trackedZombies[obj] then
+		trackedZombies[obj] = true
+		enforceHeadSize(obj)
+	end
+end
+
+-- New zombies
+camera.ChildAdded:Connect(function(child)
+	if child.Name == "m_Zombie" and not trackedZombies[child] then
+		trackedZombies[child] = true
+		enforceHeadSize(child)
+	end
+end)
