@@ -7,9 +7,6 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = workspace:WaitForChild("Camera")
 
--- Only run if in specific game
-if game.PlaceId ~= 12334109280 then return end
-
 local screenGui = Instance.new("ScreenGui", playerGui)
 screenGui.Name = "AlternateHeadModifier"
 screenGui.ResetOnSpawn = false
